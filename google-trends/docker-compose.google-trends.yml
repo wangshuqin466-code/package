@@ -1,0 +1,16 @@
+services:
+  google-trends-cron:
+    build:
+      context: .
+      dockerfile: google_trends_cron.Dockerfile
+    container_name: google-trends-cron
+    restart: unless-stopped
+    env_file:
+      - google_trends_db.env
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - C:\Users\qrp:/app
+      - C:\tmp\google_trends_data:/data
+      - C:\tmp\google_trends_logs:/logs
+      - C:\tmp\google_trends_cache_archive:/cache_archive
