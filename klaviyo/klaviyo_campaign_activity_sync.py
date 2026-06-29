@@ -628,7 +628,15 @@ def upsert_raw_events(conn, db_type, rows):
                 conn.commit()
                 break
             except Exception:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+                try:
+                    if hasattr(conn, "ping"):
+                        conn.ping(reconnect=True)
+                except Exception:
+                    pass
                 if attempt == 2:
                     raise
                 time.sleep(2 * (attempt + 1))
