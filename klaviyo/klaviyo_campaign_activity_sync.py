@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
+from requests.exceptions import ChunkedEncodingError, ConnectionError, ReadTimeout
 
 
 API_BASE = "https://a.klaviyo.com/api"
@@ -43,7 +44,13 @@ def parse_dt(value):
 
 def get_json(session, url, params=None, retries=3):
     for attempt in range(retries):
-        response = session.get(url, params=params, timeout=45)
+        try:
+            response = session.get(url, params=params, timeout=45)
+        except (ChunkedEncodingError, ConnectionError, ReadTimeout):
+            if attempt + 1 >= retries:
+                raise
+            time.sleep(5 * (attempt + 1))
+            continue
         if response.status_code in {429, 500, 502, 503, 504} and attempt + 1 < retries:
             wait = int(response.headers.get("Retry-After", "2"))
             try:
