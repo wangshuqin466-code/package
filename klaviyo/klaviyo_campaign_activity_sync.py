@@ -42,14 +42,14 @@ def parse_dt(value):
     return datetime.fromisoformat(value)
 
 
-def get_json(session, url, params=None, retries=3):
+def get_json(session, url, params=None, retries=12):
     for attempt in range(retries):
         try:
             response = session.get(url, params=params, timeout=45)
         except (ChunkedEncodingError, ConnectionError, ReadTimeout):
             if attempt + 1 >= retries:
                 raise
-            time.sleep(5 * (attempt + 1))
+            time.sleep(min(60, 10 * (attempt + 1)))
             continue
         if response.status_code in {429, 500, 502, 503, 504} and attempt + 1 < retries:
             wait = int(response.headers.get("Retry-After", "2"))
@@ -57,6 +57,7 @@ def get_json(session, url, params=None, retries=3):
                 wait = max(wait, int(response.json().get("retry_after", wait)))
             except ValueError:
                 pass
+            wait = max(wait, min(60, 10 * (attempt + 1)))
             time.sleep(wait)
             continue
         response.raise_for_status()
